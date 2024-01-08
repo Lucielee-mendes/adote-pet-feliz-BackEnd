@@ -8,6 +8,7 @@ const app = express()
 const mongoose = require('mongoose')
 const Login = require('./model/login')
 const Cadastro = require('./model/cadastro')
+const PerfilUsuario = require('./model/perfilUsuario')
 
 app.use(cors());
 
@@ -27,7 +28,7 @@ app.post('/login', async (req, res) => {
         const usuario = await Cadastro.findOne({ email });
 
         if (usuario && usuario.senha === senha) {
-            res.status(200).json({ message: 'Login efetuado com sucesso' });
+            res.status(200).json({ message: 'Login efetuado com sucesso', user: usuario });
         } else {
             res.status(401).json({ message: 'Erro ao fazer login. Verifique suas credenciais.' });
         }
@@ -65,14 +66,30 @@ app.post('/cadastro', async (req, res) => {
     try {
         await Cadastro.create(cadastro);
         res.status(201).json({ message: 'Cadastro realizado com sucesso' });
-    } catch (error) {
+      } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
-  
-    mongoose.connect('mongodb+srv://lucielee:Luci1010@adote-pet-feliz.0gz1wit.mongodb.net/')
-    .then(() =>{
+
+app.get('/perfilUsuario/:userId', async (req, res) => {
+    try {
+        const userId = req.params.userId;
+        const userData = await PerfilUsuario.findById(userId);
+
+        if (!userData) {
+            return res.status(404).json({ error: 'Usuário não encontrado' });
+        }
+
+        res.status(200).json(userData);
+    } catch (error) {
+        console.error('Error fetching user data:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+mongoose.connect('mongodb+srv://lucielee:Luci1010@adote-pet-feliz.0gz1wit.mongodb.net/')
+    .then(() => {
         console.log('conectou')
         app.listen(3001)
     })
-    .catch((err)=>console.log(err))
+    .catch((err) => console.log(err))
