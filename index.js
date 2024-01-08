@@ -1,14 +1,19 @@
+
 //configuração inicial
 
 const express = require('express')
 const cors = require('cors');
 const app = express()
+const path = require('path');
+const multerConfig = require('./multer'); // Importe o arquivo de configuração do Multer aqui
+
 
 //configuração de banco
 const mongoose = require('mongoose')
 const Login = require('./model/login')
 const Cadastro = require('./model/cadastro')
 const PerfilUsuario = require('./model/perfilUsuario')
+
 
 app.use(cors());
 
@@ -18,8 +23,13 @@ app.use(
     })
 )
 
+app.use('/files', express.static('tmp'));
+
+
+
 //criação das rotas
 app.use(express.json())
+
 
 app.post('/login', async (req, res) => {
     const { email, senha } = req.body;
@@ -86,6 +96,8 @@ app.get('/perfilUsuario/:userId', async (req, res) => {
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
+
+
 
 mongoose.connect('mongodb+srv://lucielee:Luci1010@adote-pet-feliz.0gz1wit.mongodb.net/')
     .then(() => {
