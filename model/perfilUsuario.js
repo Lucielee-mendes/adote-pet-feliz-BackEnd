@@ -6,9 +6,11 @@ const PerfilUsuario = mongoose.model('perfilUsuario', {
     estado: String,
     cidade: String,
     email: String,
-    whatsapp: String,
-
-
+    whatsapp: String,  
+    possuiCasaTelada: Boolean,
+    possuiDisponibilidadeCastrar: Boolean,
+    possuiDisponibilidadeVacinar: Boolean,
+    sobreVoce: String,
 });
 
 module.exports = PerfilUsuario;

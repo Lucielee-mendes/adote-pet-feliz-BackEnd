@@ -1,18 +1,20 @@
-
 //configuração inicial
 
 const express = require('express')
 const cors = require('cors');
 const app = express()
 const path = require('path');
-const multerConfig = require('./multer'); // Importe o arquivo de configuração do Multer aqui
+const multer = require('multer');
 
 
 //configuração de banco
 const mongoose = require('mongoose')
-const Login = require('./model/login')
-const Cadastro = require('./model/cadastro')
-const PerfilUsuario = require('./model/perfilUsuario')
+const Login = require('../model/login')
+const Cadastro = require('../model/cadastro')
+const PerfilUsuario = require('../model/perfilUsuario')
+
+//imagem
+const uploadUser = require('./config/config')
 
 
 app.use(cors());
@@ -23,12 +25,13 @@ app.use(
     })
 )
 
-app.use('/files', express.static('tmp'));
-
 
 
 //criação das rotas
 app.use(express.json())
+
+app.use('/files',
+express.static(path.resolve(__dirname, 'uploads')))
 
 
 app.post('/login', async (req, res) => {
@@ -56,7 +59,12 @@ app.get('/login', async (req, res) => {
     }
 })
 
-app.post('/cadastro', async (req, res) => {
+
+const upload = multer(uploadUser.upload());
+  
+  
+
+app.post('/cadastro', upload.single('file'), async (req, res) => {
     const { nome, email, confirmEmail, senha, whatsApp, telefone, fotoPrincipal, estado, cidade, possuiCasaTelada, possuiDisponibilidadeCastrar, possuiDisponibilidadeVacinar, sobreVoce } = req.body;
     const cadastro = {
         nome,
@@ -89,8 +97,7 @@ app.get('/perfilUsuario/:userId', async (req, res) => {
         if (!userData) {
             return res.status(404).json({ error: 'Usuário não encontrado' });
         }
-
-        res.status(200).json(userData);
+        res.status(200).json({ userData, fotoPrincipal: userData.fotoPrincipal });
     } catch (error) {
         console.error('Error fetching user data:', error);
         res.status(500).json({ error: 'Internal Server Error' });
