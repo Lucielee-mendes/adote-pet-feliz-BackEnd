@@ -9,9 +9,12 @@ const multer = require('multer');
 
 //configuração de banco
 const mongoose = require('mongoose')
+const ObjectId = mongoose.Types.ObjectId;
+
 const Login = require('../model/login')
 const Cadastro = require('../model/cadastro')
 const PerfilUsuario = require('../model/perfilUsuario')
+const CadastroPet = require('../model/cadastroPet');
 
 //imagem
 const uploadUser = require('./config/config')
@@ -26,12 +29,11 @@ app.use(
 )
 
 
-
 //criação das rotas
 app.use(express.json())
 
 app.use('/files',
-express.static(path.resolve(__dirname, 'uploads')))
+    express.static(path.resolve(__dirname, 'uploads')));
 
 
 app.post('/login', async (req, res) => {
@@ -61,8 +63,8 @@ app.get('/login', async (req, res) => {
 
 
 const upload = multer(uploadUser.upload());
-  
-  
+
+
 
 app.post('/cadastro', upload.single('file'), async (req, res) => {
     const { nome, email, confirmEmail, senha, whatsApp, telefone, fotoPrincipal, estado, cidade, possuiCasaTelada, possuiDisponibilidadeCastrar, possuiDisponibilidadeVacinar, sobreVoce } = req.body;
@@ -84,10 +86,12 @@ app.post('/cadastro', upload.single('file'), async (req, res) => {
     try {
         await Cadastro.create(cadastro);
         res.status(201).json({ message: 'Cadastro realizado com sucesso' });
-      } catch (error) {
+    } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
+
+
 
 app.get('/perfilUsuario/:userId', async (req, res) => {
     try {
@@ -101,6 +105,68 @@ app.get('/perfilUsuario/:userId', async (req, res) => {
     } catch (error) {
         console.error('Error fetching user data:', error);
         res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+
+
+
+app.post('/cadastroPet/:userId', upload.array('file', 5), async (req, res) => {
+    try {
+        const userId = req.params.userId;
+        const perfilUsuario = await PerfilUsuario.findById(userId);
+
+        if (!perfilUsuario) {
+            return res.status(404).json({ error: 'Usuário não encontrado' });
+        }
+    const {
+        nomePet,
+        especie,
+        sexo,
+        idade,
+        porte,
+        raca,
+        sobrePet,
+        cuidadosVeterinarios,
+        temperamento,
+        viveBem,
+        sociavelCom,
+        estado,
+        cidade,
+        fotos,
+    } = req.body;
+
+        const petData = {
+            nomePet,
+            especie,
+            sexo,
+            idade,
+            porte,
+            raca,
+            sobrePet,
+            cuidadosVeterinarios,
+            temperamento,
+            viveBem,
+            sociavelCom,
+            estado,
+            cidade,
+            proprietario: perfilUsuario._id,
+            fotos: fotos.map(file => ({
+                url: file.path,
+                file
+            }))
+        };
+
+        try {
+            const novoPet = await CadastroPet.create(petData);
+            res.status(201).json({ message: 'Cadastro de pet realizado com sucesso' });
+        } catch (error) {
+            console.error('Erro ao cadastrar pet:', error);
+            res.status(500).json({ error: 'Erro interno do servidor' });
+        }
+    } catch (error) {
+        console.error('Erro ao buscar usuário:', error);
+        res.status(500).json({ error: 'Erro interno do servidor' });
     }
 });
 
