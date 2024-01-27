@@ -17,7 +17,8 @@ const PerfilUsuario = require('../model/perfilUsuario')
 const CadastroPet = require('../model/cadastroPet');
 
 //imagem
-const uploadUser = require('./config/config')
+const uploadUser = require('./config/config');
+const { request } = require('http');
 
 
 app.use(cors());
@@ -66,8 +67,9 @@ const upload = multer(uploadUser.upload());
 
 
 
-app.post('/cadastro', upload.single('file'), async (req, res) => {
-    const { nome, email, confirmEmail, senha, whatsApp, telefone, fotoPrincipal, estado, cidade, possuiCasaTelada, possuiDisponibilidadeCastrar, possuiDisponibilidadeVacinar, sobreVoce } = req.body;
+app.post('/cadastro', upload.single('image'), async (req, res) => {
+    const json = req.body.json ? JSON.parse(req.body.json) : {}
+    const { nome, email, confirmEmail, senha, whatsApp, telefone, estado, cidade, possuiCasaTelada, possuiDisponibilidadeCastrar, possuiDisponibilidadeVacinar, sobreVoce } = json;
     const cadastro = {
         nome,
         email,
@@ -75,14 +77,15 @@ app.post('/cadastro', upload.single('file'), async (req, res) => {
         senha,
         whatsApp,
         telefone,
-        fotoPrincipal,
         estado,
         cidade,
         possuiCasaTelada,
         possuiDisponibilidadeCastrar,
         possuiDisponibilidadeVacinar,
         sobreVoce,
+        fotoPrincipal: req.file.filename
     };
+
     try {
         await Cadastro.create(cadastro);
         res.status(201).json({ message: 'Cadastro realizado com sucesso' });
@@ -92,6 +95,18 @@ app.post('/cadastro', upload.single('file'), async (req, res) => {
 });
 
 
+app.get('/getImagem/:filename', (req, res) => {
+    const filename = req.params.filename;
+    const filePath = path.join(__dirname,'..', 'uploads', filename);
+  
+    res.sendFile(filePath, (err) => {
+      if (err) {
+        console.error('Erro ao enviar o arquivo:', err);
+        res.status(404).json({ error: 'Imagem não encontrada' });
+      }
+    });
+  });
+  
 
 app.get('/perfilUsuario/:userId', async (req, res) => {
     try {
@@ -101,6 +116,7 @@ app.get('/perfilUsuario/:userId', async (req, res) => {
         if (!userData) {
             return res.status(404).json({ error: 'Usuário não encontrado' });
         }
+       
         res.status(200).json({ userData, fotoPrincipal: userData.fotoPrincipal });
     } catch (error) {
         console.error('Error fetching user data:', error);
@@ -119,22 +135,22 @@ app.post('/cadastroPet/:userId', upload.array('file', 5), async (req, res) => {
         if (!perfilUsuario) {
             return res.status(404).json({ error: 'Usuário não encontrado' });
         }
-    const {
-        nomePet,
-        especie,
-        sexo,
-        idade,
-        porte,
-        raca,
-        sobrePet,
-        cuidadosVeterinarios,
-        temperamento,
-        viveBem,
-        sociavelCom,
-        estado,
-        cidade,
-        fotos,
-    } = req.body;
+        const {
+            nomePet,
+            especie,
+            sexo,
+            idade,
+            porte,
+            raca,
+            sobrePet,
+            cuidadosVeterinarios,
+            temperamento,
+            viveBem,
+            sociavelCom,
+            estado,
+            cidade,
+            fotos,
+        } = req.body;
 
         const petData = {
             nomePet,
