@@ -9,7 +9,7 @@ const multer = require('multer');
 
 //configuração de banco
 const mongoose = require('mongoose')
-const ObjectId = mongoose.Types.ObjectId;
+const { ObjectId } = require('mongoose').Types;
 
 const Login = require('../model/login')
 const Cadastro = require('../model/cadastro')
@@ -130,7 +130,10 @@ app.get('/perfilUsuario/:userId', async (req, res) => {
 app.post('/cadastroPet/:userId', upload.array('file', 5), async (req, res) => {
     try {
         const userId = req.params.userId;
-        const perfilUsuario = await PerfilUsuario.findById(userId);
+        console.log('Valor de userId:', userId);
+
+        const perfilUsuario = await Cadastro.findOne({ _id: ObjectId.createFromHexString(userId) });
+        console.log('Usuário encontrado:', perfilUsuario);
 
         if (!perfilUsuario) {
             return res.status(404).json({ error: 'Usuário não encontrado' });
@@ -182,7 +185,7 @@ app.post('/cadastroPet/:userId', upload.array('file', 5), async (req, res) => {
         }
     } catch (error) {
         console.error('Erro ao buscar usuário:', error);
-        res.status(500).json({ error: 'Erro interno do servidor' });
+        res.status(500).json({ error: error.message }); 
     }
 });
 
