@@ -127,7 +127,7 @@ app.get('/perfilUsuario/:userId', async (req, res) => {
 
 
 
-app.post('/cadastroPet/:userId', upload.array('file', 5), async (req, res) => {
+app.post('/cadastroPet/:userId', upload.array('image', 5), async (req, res) => {
     try {
         const userId = req.params.userId;
         console.log('Valor de userId:', userId);
@@ -189,6 +189,21 @@ app.post('/cadastroPet/:userId', upload.array('file', 5), async (req, res) => {
     }
 });
 
+app.get('/perfilPet/:petId', async (req, res ) => {
+    try{
+        const petId = req.params.petId;
+        const perfilPet = await CadastroPet.findById(petId).populate('proprietario');
+
+        if (!perfilPet){
+            return res.status(404).json({error: 'Pet não encontrado'});
+        }
+
+        res.status(200).json({perfilPet});
+    } catch (error){
+        console.error('Erro ao buscar perfil do pet: ', error);
+        res.status(500).json({error: error.message});
+    }
+});
 
 
 mongoose.connect('mongodb+srv://lucielee:Luci1010@adote-pet-feliz.0gz1wit.mongodb.net/')
