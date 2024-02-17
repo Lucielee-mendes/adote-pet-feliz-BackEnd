@@ -5,6 +5,7 @@ const cors = require('cors');
 const app = express()
 const path = require('path');
 const multer = require('multer');
+const bcrypt = require('bcrypt');
 
 
 //configuração de banco
@@ -54,15 +55,24 @@ app.post('/login', async (req, res) => {
     const { email, senha } = req.body;
 
     try {
+        // Procurar usuário com o email fornecido
         const usuario = await Cadastro.findOne({ email });
 
-        if (usuario && usuario.senha === senha) {
-            res.status(200).json({ message: 'Login efetuado com sucesso', user: usuario });
+        if (!usuario) {
+            return res.status(401).json({ error: 'Credenciais inválidas' });
+        }
+
+        // Comparar a senha inserida com a senha criptografada do usuário encontrado
+        const result = await bcrypt.compare(senha, usuario.senha);
+        
+        if (result) {
+            res.status(200).json({ message: 'Login bem-sucedido', user: usuario });
         } else {
-            res.status(401).json({ message: 'Erro ao fazer login. Verifique suas credenciais.' });
+            res.status(401).json({ error: 'Credenciais inválidas' });
         }
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.error('Erro ao fazer login:', error);
+        res.status(500).json({ error: 'Erro ao fazer login' });
     }
 });
 
@@ -83,11 +93,12 @@ app.get('/login', async (req, res) => {
 app.post('/cadastro', upload.single('image'), async (req, res) => {
     const json = req.body.json ? JSON.parse(req.body.json) : {}
     const { nome, email, confirmEmail, senha, whatsApp, telefone, estado, cidade, possuiCasaTelada, possuiDisponibilidadeCastrar, possuiDisponibilidadeVacinar, sobreVoce } = json;
+    const hashedPassword = await bcrypt.hash(senha, 10);
     const cadastro = {
         nome,
         email,
         confirmEmail,
-        senha,
+        senha: hashedPassword,
         whatsApp,
         telefone,
         estado,
@@ -108,6 +119,36 @@ app.post('/cadastro', upload.single('image'), async (req, res) => {
 });
 
 
+app.post('/esqueceuSenha', async (req, res) => {
+    const { email, senha } = req.body;
+
+    try {
+        console.log('Procurando usuário com o email:', email);
+
+        const usuario = await Cadastro.findOne({ email });
+
+        console.log('Usuário encontrado:', usuario)
+
+        if (!usuario) {
+            return res.status(404).json({ error: 'Usuário não encontrado' });
+        }
+
+        // Hash da nova senha
+        const hashedPassword = await bcrypt.hash(senha, 10);
+        console.log('Nova senha criptografada:', hashedPassword);
+
+        console.log('Atualizando senha para o usuário:', email);
+
+        // Atualizar a senha do usuário
+        const updatedUser = await Cadastro.findOneAndUpdate({ email }, { senha: hashedPassword });
+        console.log('Usuário atualizado:', updatedUser);
+
+        res.status(200).json({ message: 'Senha redefinida com sucesso' });
+    } catch (error) {
+        console.error('Erro ao redefinir senha:', error);
+        res.status(500).json({ error: 'Erro ao redefinir senha' });
+    }
+});
 
 
 
