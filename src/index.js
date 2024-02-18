@@ -168,6 +168,22 @@ app.get('/perfilUsuario/:userId', async (req, res) => {
     }
 });
 
+app.put('/editarPerfil/:userId', async (req,res) => {
+    const { userId } = req.params;
+    const newData = req.body;
+
+    try{
+        const perfil = await PerfilUsuario.findByIdAndUpdate(userId, newData, { new: true});
+
+        if (!perfil) {
+            return res.status(404).json({error: 'Perfil não encontrado'}); 
+        }
+        res.status(200).json(perfil);
+    } catch (error){
+        console.error('Erro ao editar perfil:', error);
+        res.status(500).json({ error: 'Erro ao editar perfil' });
+    }
+})
 
 
 
