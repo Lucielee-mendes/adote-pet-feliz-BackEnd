@@ -64,7 +64,7 @@ app.post('/login', async (req, res) => {
 
         // Comparar a senha inserida com a senha criptografada do usuário encontrado
         const result = await bcrypt.compare(senha, usuario.senha);
-        
+
         if (result) {
             res.status(200).json({ message: 'Login bem-sucedido', user: usuario });
         } else {
@@ -84,8 +84,6 @@ app.get('/login', async (req, res) => {
         res.status(500).json({ error: error.message })
     }
 })
-
-
 
 
 
@@ -117,7 +115,6 @@ app.post('/cadastro', upload.single('image'), async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
-
 
 app.post('/esqueceuSenha', async (req, res) => {
     const { email, senha } = req.body;
@@ -155,7 +152,7 @@ app.post('/esqueceuSenha', async (req, res) => {
 app.get('/perfilUsuario/:userId', async (req, res) => {
     try {
         const userId = req.params.userId;
-        const userData = await PerfilUsuario.findById(userId);
+        const userData = await Cadastro.findById(userId);
 
         if (!userData) {
             return res.status(404).json({ error: 'Usuário não encontrado' });
@@ -168,18 +165,24 @@ app.get('/perfilUsuario/:userId', async (req, res) => {
     }
 });
 
-app.put('/editarPerfil/:userId', async (req,res) => {
-    const { userId } = req.params;
+app.put('/editarPerfil/:userId', async (req, res) => {
+    const userId = req.params.userId;
     const newData = req.body;
 
-    try{
-        const perfil = await PerfilUsuario.findByIdAndUpdate(userId, newData, { new: true});
+    if (!ObjectId.isValid(userId)) {
+        return res.status(400).json({ error: 'ID de usuário inválido' });
+    }
+
+    try {
+        console.log('ID do usuário:', userId);
+
+        const perfil = await Cadastro.findByIdAndUpdate(userId, newData, { new: true });
 
         if (!perfil) {
-            return res.status(404).json({error: 'Perfil não encontrado'}); 
+            return res.status(404).json({ error: 'Perfil não encontrado' });
         }
         res.status(200).json(perfil);
-    } catch (error){
+    } catch (error) {
         console.error('Erro ao editar perfil:', error);
         res.status(500).json({ error: 'Erro ao editar perfil' });
     }
@@ -193,7 +196,6 @@ app.post('/cadastroPet/:userId', upload.array('image', 5), async (req, res) => {
         console.log('Valor de userId:', userId);
 
         const perfilUsuario = await Cadastro.findOne({ _id: ObjectId.createFromHexString(userId) });
-        console.log('Usuário encontrado:', perfilUsuario);
 
         if (!perfilUsuario) {
             return res.status(404).json({ error: 'Usuário não encontrado' });
