@@ -158,7 +158,9 @@ app.get('/perfilUsuario/:userId', async (req, res) => {
             return res.status(404).json({ error: 'Usuário não encontrado' });
         }
 
-        res.status(200).json({ userData, fotoPrincipal: userData.fotoPrincipal });
+        const petsData = await CadastroPet.find({userId});
+
+        res.status(200).json({ userData, petsData, fotoPrincipal: userData.fotoPrincipal });
     } catch (error) {
         console.error('Error fetching user data:', error);
         res.status(500).json({ error: 'Internal Server Error' });
@@ -187,6 +189,21 @@ app.put('/editarPerfil/:userId', async (req, res) => {
         res.status(500).json({ error: 'Erro ao editar perfil' });
     }
 })
+
+app.delete('/excluirConta/:userId', async (req, res) => {
+    const userId = req.params.userId;
+
+    try {
+        const deletedUser = await Cadastro.findByIdAndDelete(userId);
+        if (!deletedUser) {
+            return res.status(404).json({ error: 'Usuário não encontrado' });
+        }
+        res.status(200).json({ message: 'Conta excluída com sucesso' });
+    } catch (error) {
+        console.error('Erro ao excluir conta:', error);
+        res.status(500).json({ error: 'Erro interno do servidor ao excluir conta' });
+    }
+});
 
 
 
@@ -256,7 +273,9 @@ app.post('/cadastroPet/:userId', upload.array('image', 5), async (req, res) => {
 app.get('/perfilPet/:petId', async (req, res) => {
     try {
         const petId = req.params.petId;
-        const perfilPet = await CadastroPet.findById(petId).populate('proprietario');
+        const perfilPet = await CadastroPet.findById(petId)
+
+        // const perfilPet = await CadastroPet.findById(petId).populate('proprietario');
 
         if (!perfilPet) {
             return res.status(404).json({ error: 'Pet não encontrado' });
@@ -269,6 +288,35 @@ app.get('/perfilPet/:petId', async (req, res) => {
     }
 });
 
+app.get('/pets', async (req, res) => {
+    try {
+        let query = {};
+
+        // Verifica se foi passado o ID do usuário
+        if (req.query.userId) {
+            query.proprietario = req.query.userId;
+        }
+
+        // Encontrar pets com base na consulta
+        const pets = await CadastroPet.find(query);
+
+        res.status(200).json(pets);
+    } catch (error) {
+        console.error('Erro ao buscar pets:', error);
+        res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+});
+
+app.delete('/perfilPet/:petId', async (req, res) => {
+    try {
+        const petId = req.params.petId;
+        await CadastroPet.findByIdAndDelete(petId);
+        res.status(200).send({ message: 'Cadastro do pet excluído com sucesso.' });
+    } catch (error) {
+        console.error('Erro ao excluir cadastro do pet:', error);
+        res.status(500).send({ error: 'Erro ao excluir cadastro do pet. Por favor, tente novamente mais tarde.' });
+    }
+});
 
 mongoose.connect('mongodb+srv://lucielee:Luci1010@adote-pet-feliz.0gz1wit.mongodb.net/')
     .then(() => {
